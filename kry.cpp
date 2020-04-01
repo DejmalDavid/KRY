@@ -30,23 +30,17 @@ bool readNumber( char *argv,mpz_t number)
 	else return true;
 }
 
+mpz_class modInverse(mpz_class a, mpz_class m) 
+{ 
+    a = a%m; 
+    for (mpz_class x=1; x<m; x++) 
+       if ((a*x) % m == 1) 
+          return x; 
+} 
 
-// find gcd
-int gcd(int a, int b) {
-   int t;
-   while(1) {
-      t= a%b;
-      if(t==0)
-      return b;
-      a = b;
-      b= t;
-   }
-}
-
-
-unsigned gcd_recursive(unsigned a, unsigned b)
+mpz_class gcd_recursive(mpz_class a, mpz_class b)
 {
-    if (b)
+    if (b!=0)
         return gcd_recursive(b, a % b);
     else
         return a;
@@ -65,10 +59,10 @@ void randP(int bits,mpz_t result)
 */
 
 
-mpf_class randP(int bits)
+mpf_class myRand(int bits)
 {
-	
-	return rr.get_z_bits(bits);
+	if(bits%2==0) return rr.get_z_bits(((bits/2)));
+	else return rr.get_z_bits(((bits/2)+1));
 }
 
 
@@ -78,15 +72,17 @@ int main(int argc, char **argv) {
 	
 	int B;
 	mpz_class P;
-	mpz_t Q;
+	mpz_class Q;
+	mpz_class n;
+	mpz_class e;
+	mpz_class d;
+	
 	mpz_t N;
 	mpz_t E;
 	mpz_t D;
 	mpz_t M;
 	mpz_t C;
 	
-	mpz_init(Q);
-	mpz_set_ui(Q,0);
 	mpz_init(N);
 	mpz_set_ui(N,0);
 	mpz_init(E);
@@ -149,7 +145,7 @@ int main(int argc, char **argv) {
 				{
 					string tmp (argv[i]);
 					istringstream(tmp) >> B;
-					cout<<"G1:"<<B<<endl;
+					//cout<<"G1:"<<B<<endl;
 				}
 			if(i > 2){ fprintf(stderr,"Prepinac g musi obsahova prave 1 argument: B");	 return 1;}			
 				break;
@@ -245,32 +241,66 @@ switch(lastOpt)
 			case 'g':	//prekopiruje argument do potrebne promene
 			{
 				rr.seed(seed);
-				cout<<"parametr G"<<B<<endl;	
-				P=randP(B);
-				cout<<"rand:"<<P<<endl;
+				//cout<<"parametr G"<<B<<endl;	
+				P=myRand(B);
+				Q=myRand(B);
+				//cout<<"rand:"<<P<<endl;
+				//cout<<"rand:"<<Q<<endl;
 				
-				/*
-				if (solovoyStrassen(P, 100,B))
-				{cout<<"Prime"; }
-				else 
-				{cout<<"Composite";}
-			*/
+				while(Q%2==0)
+				{
+					Q=myRand(B);
+				}
 				while(P%2==0)
 				{
-					P=randP(B);
+					P=myRand(B);
 				}
 				
-				cout<<"Jsem lichy:"<<P<<endl;
+				
+				//cout<<"Jsem lichy:"<<P<<endl;
 				while(solovoyStrassen(P, 100,B)==false)
 				{
 					P=P+2;
 				}
+				//cout<<"Prime:"<<P<<endl;
 				
-				cout<<"Prime:"<<P;
+				
+				//cout<<"Jsem lichy:"<<Q<<endl;
+				while(solovoyStrassen(Q, 100,B)==false)
+				{
+					Q=Q+2;
+				}
+				
+				//cout<<"Prime:"<<Q<<endl;
 					
+				n = P * Q;	//go
 
+				//cout<<"N:"<<n<<endl;
+				//cout<<"N:"<<hex<<n<<endl;
+				
+				mpz_class phi;
+				phi = (P-1)*(Q-1);
+				
+				//cout<<"PHI:"<<phi<<endl;
+				
+				e=3;			
+				while(gcd_recursive(e,phi)!=1) {
+					 e++;
+				}
+				
+				//cout<<"E:"<<e<<endl;
+				//cout<<"E:"<<hex<<e<<endl;
+				
+				
+				d = modInverse(e,phi);
+		
+				
+				//cout<<"D:"<<d<<endl;
+				
+				//cout<<"D:"<<hex<<d<<endl;
 
-
+				cout<<hex<<"0x"<<P<<" 0x"<<Q<<" 0x"<<n<<" 0x"<<e<<" 0x"<<d<<endl;
+				
 				return 0;
 			}
 			case 'e': //encryption verejnym klicem
@@ -288,7 +318,7 @@ switch(lastOpt)
 				//c pow d mod n
 				mpz_powm(M,C,D,N);
 				cout<<"Mesage:"<<M<<endl;	//TODO
-				cout<<"0x"<<hex<<C<<endl;
+				cout<<"0x"<<hex<<M<<endl;
 				return 0;
 			}
 			case 'b':
